@@ -7,6 +7,7 @@ import { ExtensionPreferences, gettext as _ } from 'resource:///org/gnome/Shell/
 const COLOR = 'color';
 
 function _gdk_rgba_to_string(rgba) {
+    //Round colors to integers and alpha to two digits
     const r = (rgba.red * 255) | 0;
     const g = (rgba.green * 255) | 0;
     const b = (rgba.blue * 255) | 0;
@@ -62,4 +63,3 @@ export default class GnomePanelCustomColorPrefsWidget extends ExtensionPreferenc
         window.add(page);
     }
 }
-
