@@ -1,7 +1,6 @@
 import GLib from 'gi://GLib';
-import Cogl from 'gi://Cogl';
 
-import {Extension} from 'resource:///org/gnome/shell/extensions/extension.js';
+import { Extension } from 'resource:///org/gnome/shell/extensions/extension.js';
 import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 
 export default class GnomePanelCustomColorExtension extends Extension {
@@ -11,23 +10,27 @@ export default class GnomePanelCustomColorExtension extends Extension {
         this._windowSignalIds = null;
         this._delayedTimeoutId = null;
         this.colorChangeDebounce = null;
+        this.old_hide = null;
     }
 
     enable() {
-
+        const self = this;
         this._settings = this.getSettings();
-        this._currentColor = this._settings.get_string('color');
-
         this._actorSignalIds = new Map();
         this._windowSignalIds = new Map();
         this._settings.connect('changed', (settings, key) => this.colorChanged(settings, key));
+
         this._actorSignalIds.set(Main.overview, [
-            Main.overview.connect('showing', this._updateColor.bind(this)),
-            Main.overview.connect('hiding', this._updateColor.bind(this))
+            Main.overview.connect('showing', () => { self._updateColor(); })
         ]);
+        // The "hide" signal is fired at the begining of the animation.
+        // When _hideDone is called, it sets the panel style to null (reset);
+        // We hijack this function to update the color immediately after _hideDone
+        this.old_hide = Main.overview._hideDone;
+        Main.overview._hideDone = () => { self.old_hide.call(Main.overview); self._updateColor(); };
 
         this._actorSignalIds.set(Main.sessionMode, [
-            Main.sessionMode.connect('updated', this._updateColor.bind(this))
+            Main.sessionMode.connect('updated', () => { self._updateColor(); })
         ]);
 
         for (const metaWindowActor of global.get_window_actors()) {
@@ -39,20 +42,26 @@ export default class GnomePanelCustomColorExtension extends Extension {
             global.window_group.connect('child-removed', this._onWindowActorRemoved.bind(this))
         ]);
 
-        //Use a delayed version of _updateColor to let the shell catch up
         this._actorSignalIds.set(global.window_manager, [
-            global.window_manager.connect('switch-workspace', this._updateColorDelayed.bind(this))
+            global.window_manager.connect('kill-switch-workspace', () => { self._updateColor(); })
         ]);
 
         this._updateColor();
+    }
+    _getColor() {
+        if (this._settings != null) {
+            return this._settings.get_string('color');
+        }
+
     }
 
     colorChanged(settings, key) {
 
         if (key === 'color') {
-            GLib.source_remove(this.colorChangeDebounce);
-            this.transparencyChangeDebounce = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 250, () => {
-                this._currentColor = this._settings.get_string('color');
+            if (this.colorChangeDebounce != null)
+                GLib.source_remove(this.colorChangeDebounce);
+
+            this.colorChangeDebounce = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 250, () => {
                 this._updateColor();
             });
             return;
@@ -60,7 +69,8 @@ export default class GnomePanelCustomColorExtension extends Extension {
     }
 
     disable() {
-        GLib.source_remove(this.colorChangeDebounce);
+        if (this.colorChangeDebounce != null)
+            GLib.source_remove(this.colorChangeDebounce);
 
         for (const actorSignalIds of [this._actorSignalIds, this._windowSignalIds]) {
             for (const [actor, signalIds] of actorSignalIds) {
@@ -75,8 +85,9 @@ export default class GnomePanelCustomColorExtension extends Extension {
         if (this._delayedTimeoutId != null) {
             GLib.Source.remove(this._delayedTimeoutId);
         }
+        Main.overview._hideDone = this.old_hide;
         this._delayedTimeoutId = null;
-        this._setColor(null);    
+        this._setColor(false);
         this._settings = null;
     }
 
@@ -95,24 +106,16 @@ export default class GnomePanelCustomColorExtension extends Extension {
         this._updateColor();
     }
 
-    _updateColorDelayed() {
-        this._delayedTimeoutId = GLib.timeout_add(GLib.PRIORITY_DEFAULT, 100, () => {
-            this._updateColor();
-            this._delayedTimeoutId = null;
-            return GLib.SOURCE_REMOVE;
-        });
-    }
     _updateColor() {
-        this._setColor(this._currentColor);
+        this._setColor(true);
     }
 
-    _setColor(color) {
-
-        const [ok, colorObj] = Cogl.color_from_string(color);
-        if (ok) {
-            Main.panel.set_background_color(colorObj);
+    _setColor(do_color) {
+        if (do_color) {
+            const color = this._getColor();
+            Main.panel.set_style("background-color: " + color + ";");
         } else {
-            Main.panel.set_background_color(null);
+            Main.panel.set_style(null);
         }
     }
 

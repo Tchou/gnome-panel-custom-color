@@ -10,7 +10,8 @@ function _gdk_rgba_to_string(rgba) {
     const r = (rgba.red * 255) | 0;
     const g = (rgba.green * 255) | 0;
     const b = (rgba.blue * 255) | 0;
-    return "rgba(" + r + "," + g + "," + b + "," + rgba.alpha + ")";
+    const a = rgba.alpha - (rgba.alpha % 0.01);
+    return "rgba(" + r + "," + g + "," + b + "," + a + ")";
 }
 
 export default class GnomePanelCustomColorPrefsWidget extends ExtensionPreferences {
@@ -31,6 +32,7 @@ export default class GnomePanelCustomColorPrefsWidget extends ExtensionPreferenc
         const dialog = new Gtk.ColorDialog({
             title: _('Choose Panel Color'),
             with_alpha: true,
+            modal: true
         });
 
         const colorButton = new Gtk.ColorDialogButton({
@@ -48,14 +50,14 @@ export default class GnomePanelCustomColorPrefsWidget extends ExtensionPreferenc
             );
         });
 
-        const row = new Adw.ActionRow({
-            title: _('Panel color'),
-        });
+//        const row = new Adw.ActionRow({
+//            title: _('Panel color'),
+//        });
+        group.set_header_suffix(colorButton);
+//        row.add_suffix(colorButton);
+//        row.set_activatable_widget(colorButton);
 
-        row.add_suffix(colorButton);
-        row.set_activatable_widget(colorButton);
-
-        group.add(row);
+//        group.add(row);
         page.add(group);
         window.add(page);
     }
