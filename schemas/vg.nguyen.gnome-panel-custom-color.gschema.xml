@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<schemalist>
+    <schema id="vg.nguyen.gnome-panel-custom-color" path="/vg/nguyen/gnome-panel-custom-color/">
+        <key type="s" name="color">
+            <default>''</default>
+            <summary>Background Color</summary>
+            <description>The background color in any format suported by GTK CSS (#rrggbbaa, rgb(r,g,b), rgba(r,g,b,a), … Leave blank to let the theme choose the color.</description>
+        </key>
+    </schema>
+</schemalist>
