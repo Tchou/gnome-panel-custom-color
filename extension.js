@@ -15,7 +15,7 @@ export default class GnomePanelCustomColorExtension extends Extension {
 
     enable() {
 
-        this._settings = this.getSettings('vg.nguyen.gnome-panel-custom-color');
+        this._settings = this.getSettings();
         this._currentColor = this._settings.get_string('color');
 
         this._actorSignalIds = new Map();
@@ -103,7 +103,7 @@ export default class GnomePanelCustomColorExtension extends Extension {
         });
     }
     _updateColor() {
-        this._setTransparent(this._currentColor);
+        this._setColor(this._currentColor);
     }
 
     _setColor(color) {

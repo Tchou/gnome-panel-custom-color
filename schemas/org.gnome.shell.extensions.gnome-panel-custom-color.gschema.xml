@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <schemalist>
-    <schema id="vg.nguyen.gnome-panel-custom-color" path="/vg/nguyen/gnome-panel-custom-color/">
+    <schema id="org.gnome.shell.extensions.gnome-panel-custom-color" path="/org/gnome/shell/extensions/gnome-panel-custom-color/">
         <key type="s" name="color">
             <default>''</default>
             <summary>Background Color</summary>
