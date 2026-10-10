@@ -6,6 +6,8 @@ import * as Main from 'resource:///org/gnome/shell/ui/main.js';
 export default class GnomePanelCustomColorExtension extends Extension {
     constructor(metadata) {
         super(metadata);
+        this._settings = null;
+        this._settingsSignalId = null;
         this._actorSignalIds = null;
         this._windowSignalIds = null;
         this._delayedTimeoutId = null;
@@ -18,7 +20,8 @@ export default class GnomePanelCustomColorExtension extends Extension {
         this._settings = this.getSettings();
         this._actorSignalIds = new Map();
         this._windowSignalIds = new Map();
-        this._settings.connect('changed', (settings, key) => this.colorChanged(settings, key));
+        this._settingsSignalId = this._settings.connect('changed',
+            (settings, key) => this.colorChanged(settings, key));
 
         this._actorSignalIds.set(Main.overview, [
             Main.overview.connect('showing', () => { self._updateColor(); })
@@ -88,6 +91,7 @@ export default class GnomePanelCustomColorExtension extends Extension {
         Main.overview._hideDone = this.old_hide;
         this._delayedTimeoutId = null;
         this._setColor(false);
+        this._settings.disconnect(this._settingsSignalId);
         this._settings = null;
     }
 
